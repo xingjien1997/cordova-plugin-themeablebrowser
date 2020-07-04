@@ -24,7 +24,6 @@
 #endif
 
 #import <Cordova/CDVPluginResult.h>
-#import <Cordova/CDVUserAgentUtil.h>
 
 #define    kThemeableBrowserTargetSelf @"_self"
 #define    kThemeableBrowserTargetSystem @"_system"
@@ -105,11 +104,6 @@
     return self;
 }
 #endif
-
-- (id)settingForKey:(NSString*)key
-{
-    return [self.commandDelegate.settings objectForKey:[key lowercaseString]];
-}
 
 - (void)onReset
 {
@@ -280,23 +274,11 @@
     }
 
     if (self.themeableBrowserViewController == nil) {
-        NSString* userAgent = [CDVUserAgentUtil originalUserAgent];
-        NSString* overrideUserAgent = [self settingForKey:@"OverrideUserAgent"];
-        if (browserOptions.customUserAgent) {
-            userAgent = browserOptions.customUserAgent;
-        } else if (overrideUserAgent) {
-            userAgent = overrideUserAgent;
-        } else {
-            NSString* appendUserAgent = [self settingForKey:@"AppendUserAgent"];
-            if(appendUserAgent) {
-                userAgent = [userAgent stringByAppendingString: appendUserAgent];
-            }
-        }
         self.themeableBrowserViewController = [[CDVThemeableBrowserViewController alloc]
-                                               initWithUserAgent:userAgent prevUserAgent:[self.commandDelegate userAgent]
-                                               browserOptions: browserOptions
+                                               initWithBrowserOptions: browserOptions
                                                navigationDelete:self
-                                               statusBarStyle:[UIApplication sharedApplication].statusBarStyle];
+                                               statusBarStyle:[UIApplication sharedApplication].statusBarStyle
+                                               settings:self.commandDelegate.settings];
         
         if ([self.viewController conformsToProtocol:@protocol(CDVScreenOrientationDelegate)]) {
             self.themeableBrowserViewController.orientationDelegate = (UIViewController <CDVScreenOrientationDelegate>*)self.viewController;
@@ -841,13 +823,12 @@
 
 @synthesize currentURL;
 
-- (id)initWithUserAgent:(NSString*)userAgent prevUserAgent:(NSString*)prevUserAgent browserOptions: (CDVThemeableBrowserOptions*) browserOptions navigationDelete:(CDVThemeableBrowser*) navigationDelegate statusBarStyle:(UIStatusBarStyle) statusBarStyle
+- (id)initWithBrowserOptions:(CDVThemeableBrowserOptions*) browserOptions navigationDelete:(CDVThemeableBrowser*) navigationDelegate statusBarStyle:(UIStatusBarStyle) statusBarStyle settings:(NSDictionary*) settings
 {
     self = [super init];
     if (self != nil) {
-        _userAgent = userAgent;
-        _prevUserAgent = prevUserAgent;
         _browserOptions = browserOptions;
+        _settings = settings;
         //_webViewDelegate = [[CDVWKWebViewUIDelegate alloc] init];
         
 
@@ -882,6 +863,16 @@
     WKUserContentController* userContentController = [[WKUserContentController alloc] init];
     
     WKWebViewConfiguration* configuration = [[WKWebViewConfiguration alloc] init];
+
+    NSString *userAgent = configuration.applicationNameForUserAgent;
+    if (
+        [self settingForKey:@"OverrideUserAgent"] == nil &&
+        _browserOptions.customUserAgent == nil &&
+        [self settingForKey:@"AppendUserAgent"] != nil
+        ) {
+        userAgent = [NSString stringWithFormat:@"%@ %@", userAgent, [self settingForKey:@"AppendUserAgent"]];
+    }
+    configuration.applicationNameForUserAgent = userAgent;
     configuration.userContentController = userContentController;
 #if __has_include("CDVWKProcessPoolFactory.h")
     configuration.processPool = [[CDVWKProcessPoolFactory sharedFactory] sharedProcessPool];
@@ -911,8 +902,11 @@
     self.webView.navigationDelegate = self;
 
     self.webView.backgroundColor = [UIColor whiteColor];
+    NSString* overrideUserAgent = [self settingForKey:@"OverrideUserAgent"];
     if (_browserOptions.customUserAgent) {
         self.webView.customUserAgent = _browserOptions.customUserAgent;
+    } else if (overrideUserAgent) {
+        self.webView.customUserAgent = overrideUserAgent;
     }
 
     self.webView.clearsContextBeforeDrawing = YES;
@@ -1163,6 +1157,11 @@
         [self.view addSubview:self.progressView];
         [self.webView addObserver:self forKeyPath:@"estimatedProgress" options:NSKeyValueObservingOptionNew context:nil];
     }
+}
+
+- (id)settingForKey:(NSString*)key
+{
+    return [_settings objectForKey:[key lowercaseString]];
 }
 
 - (nullable WKWebView *)webView:(WKWebView *)webView createWebViewWithConfiguration:(WKWebViewConfiguration *)configuration forNavigationAction:(WKNavigationAction *)navigationAction windowFeatures:(WKWindowFeatures *)windowFeatures
@@ -1469,7 +1468,6 @@
 - (void)viewDidUnload
 {
     [self.webView loadHTMLString:nil baseURL:nil];
-    [CDVUserAgentUtil releaseLock:&_userAgentLockToken];
     [super viewDidUnload];
 }
 
@@ -1482,7 +1480,6 @@
 {
     [self emitEventForButton:_browserOptions.closeButton];
 
-    [CDVUserAgentUtil releaseLock:&_userAgentLockToken];
     self.currentURL = nil;
 
     if ([self getBoolFromDict:_browserOptions.browserProgress withKey:kThemeableBrowserPropShowProgress]) {
@@ -1524,15 +1521,7 @@
 {
     NSURLRequest* request = [NSURLRequest requestWithURL:url];
 
-    if (_userAgentLockToken != 0) {
-        [self.webView loadRequest:request];
-    } else {
-        [CDVUserAgentUtil acquireLock:^(NSInteger lockToken) {
-            _userAgentLockToken = lockToken;
-            [CDVUserAgentUtil setUserAgent:_userAgent lockToken:lockToken];
-            [self.webView loadRequest:request];
-        }];
-    }
+    [self.webView loadRequest:request];
 }
 
 - (void)goBack:(id)sender
@@ -1928,15 +1917,6 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
     return 1 << UIInterfaceOrientationPortrait;
 }
 
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    if ((self.orientationDelegate != nil) && [self.orientationDelegate respondsToSelector:@selector(shouldAutorotateToInterfaceOrientation:)]) {
-        return [self.orientationDelegate shouldAutorotateToInterfaceOrientation:interfaceOrientation];
-    }
-
-    return YES;
-}
-
 + (UIColor *)colorFromRGBA:(NSString *)rgba {
     unsigned rgbaVal = 0;
 
@@ -2021,15 +2001,6 @@ static void extracted(CDVThemeableBrowserViewController *object, WKWebView *theW
     }
 
     return 1 << UIInterfaceOrientationPortrait;
-}
-
-- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
-{
-    if ((self.orientationDelegate != nil) && [self.orientationDelegate respondsToSelector:@selector(shouldAutorotateToInterfaceOrientation:)]) {
-        return [self.orientationDelegate shouldAutorotateToInterfaceOrientation:interfaceOrientation];
-    }
-
-    return YES;
 }
 
 

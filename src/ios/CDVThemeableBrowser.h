@@ -22,7 +22,6 @@
 #import <Cordova/CDVScreenOrientationDelegate.h>
 #import <WebKit/WebKit.h>
 #import <UIKit/UIKit.h>
-#import "CDVWKWebViewUIDelegate.h"
 
 //#ifdef __CORDOVA_4_0_0
 //    #import <Cordova/CDVUIWebViewDelegate.h>
@@ -95,11 +94,9 @@
 
 @interface CDVThemeableBrowserViewController : UIViewController <WKNavigationDelegate,CDVScreenOrientationDelegate, UIActionSheetDelegate, UIGestureRecognizerDelegate, WKScriptMessageHandler, WKUIDelegate>{
     @private
-    NSString* _userAgent;
-    NSString* _prevUserAgent;
-    NSInteger _userAgentLockToken;
     UIStatusBarStyle _statusBarStyle;
     CDVThemeableBrowserOptions *_browserOptions;
+    NSDictionary *_settings;
 
 //#ifdef __CORDOVA_4_0_0
 ////    kCDVWebViewEngineWKUIDelegate* _webViewDelegate;
@@ -142,7 +139,7 @@
 - (void)showToolBar:(BOOL)show : (NSString*) toolbarPosition;
 - (void)setCloseButtonTitle:(NSString*)title;
 
-- (id)initWithUserAgent:(NSString*)userAgent prevUserAgent:(NSString*)prevUserAgent browserOptions: (CDVThemeableBrowserOptions*) browserOptions navigationDelete:(CDVThemeableBrowser*) navigationDelegate statusBarStyle:(UIStatusBarStyle) statusBarStyle;
+- (id)initWithBrowserOptions: (CDVThemeableBrowserOptions*) browserOptions navigationDelete:(CDVThemeableBrowser*) navigationDelegate statusBarStyle:(UIStatusBarStyle) statusBarStyle settings:(NSDictionary*) settings;
 
 + (UIColor *)colorFromRGBA:(NSString *)rgba;
 

@@ -30,13 +30,14 @@ Additions:
 
 * replace UIWebview into Wkwebview https://github.com/initialxy/cordova-plugin-themeablebrowser/issues/187
 * Merging changes made with a fork https://github.com/grexican/cordova-plugin-themeablebrowser
-* Added option to enable swipe back / forward history.(iOS only)
+* Added option to enable swipe back / forward history.(iOS only).
 * Fixed a bug that is not displayed in full screen.
 * Fixed a bug that the link of new window cannot be displayed.
 * Fixed a bug that loadstart,message event does not work.
 * Fixed a bug that enableviewportscale and mediaplaybackrequiresuseraction properties do not work.
-* Add customUserAgent Property
-* Fixed a bug that currentURL is overwritten by URL of inline frame
+* Add customUserAgent Property.
+* Fixed a bug that currentURL is overwritten by URL of inline frame.
+* supported  cordova-ios >6.0.0.
 
 Sample call/config:
 
