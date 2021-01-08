@@ -951,6 +951,11 @@ public class ThemeableBrowser extends CordovaPlugin {
                     }
                 }
 
+                // Enable Thirdparty Cookies on >=Android 5.0 device
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.LOLLIPOP) {
+                  CookieManager.getInstance().setAcceptThirdPartyCookies(inAppWebView,true);
+                }
+
                 // Add JS interface
                 class JsObject {
                     @JavascriptInterface
