@@ -1527,6 +1527,7 @@ public class ThemeableBrowser extends CordovaPlugin {
                     Log.e(LOG_TAG, "Error dialing " + url + ": " + e.toString());
                 }
             } else if (url.startsWith("geo:") || url.startsWith(WebView.SCHEME_MAILTO) || url.startsWith("market:") || url.startsWith("http://play.google.com") || url.startsWith("https://play.google.com") || url.endsWith(".pdf")) {
+                Log.v(LOG_TAG, "PDF found: " + url);
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setData(Uri.parse(url));
