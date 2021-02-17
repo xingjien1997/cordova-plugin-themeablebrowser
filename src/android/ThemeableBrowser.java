@@ -1515,7 +1515,7 @@ public class ThemeableBrowser extends CordovaPlugin {
             final List<ResolveInfo> resolvedActivities = packageManager.queryIntentActivities(customSchemeIntent, 0);
             Log.v(LOG_TAG, "Current URL: " + url);
             String newloc = "";
-            if ((url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:")) && (!url.startsWith("http://play.google.com") && !url.startsWith("https://play.google.com"))) {
+            if ((url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:")) && (!url.startsWith("http://play.google.com") && !url.startsWith("https://play.google.com") && !url.endsWith(".pdf"))) {
                 newloc = url;
             } else if (url.startsWith(WebView.SCHEME_TEL)) {
                 try {
