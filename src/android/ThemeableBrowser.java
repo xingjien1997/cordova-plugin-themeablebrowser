@@ -1513,9 +1513,9 @@ public class ThemeableBrowser extends CordovaPlugin {
             final Intent customSchemeIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
             final PackageManager packageManager = cordova.getActivity().getApplicationContext().getPackageManager();
             final List<ResolveInfo> resolvedActivities = packageManager.queryIntentActivities(customSchemeIntent, 0);
-
+            Log.v(LOG_TAG, "Current URL: " + url);
             String newloc = "";
-            if ((url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:")) && (!url.startsWith("http://play.google.com") && !url.startsWith("https://play.google.com"))) {
+            if ((url.startsWith("http:") || url.startsWith("https:") || url.startsWith("file:")) && (!url.startsWith("http://play.google.com") && !url.startsWith("https://play.google.com") && !url.endsWith(".pdf"))) {
                 newloc = url;
             } else if (url.startsWith(WebView.SCHEME_TEL)) {
                 try {
@@ -1526,7 +1526,8 @@ public class ThemeableBrowser extends CordovaPlugin {
                 } catch (android.content.ActivityNotFoundException e) {
                     Log.e(LOG_TAG, "Error dialing " + url + ": " + e.toString());
                 }
-            } else if (url.startsWith("geo:") || url.startsWith(WebView.SCHEME_MAILTO) || url.startsWith("market:") || url.startsWith("http://play.google.com") || url.startsWith("https://play.google.com")) {
+            } else if (url.startsWith("geo:") || url.startsWith(WebView.SCHEME_MAILTO) || url.startsWith("market:") || url.startsWith("http://play.google.com") || url.startsWith("https://play.google.com") || url.endsWith(".pdf")) {
+                Log.v(LOG_TAG, "PDF found: " + url);
                 try {
                     Intent intent = new Intent(Intent.ACTION_VIEW);
                     intent.setData(Uri.parse(url));
